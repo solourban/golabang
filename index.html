@@ -16,7 +16,7 @@
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
-  .container { max-width: 720px; margin: 0 auto; padding: 16px; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 16px; }
 
   /* Header */
   header {
@@ -58,8 +58,11 @@
   .empty p { font-size: 14px; margin-bottom: 16px; }
 
   /* Property card */
-  .prop-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-  @media (min-width: 600px) { .prop-grid { grid-template-columns: 1fr 1fr; } }
+  .prop-grid { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+  gap: 16px; 
+}
 
   .prop-card {
     background: white; border: 1px solid #E5E8EB; border-radius: 14px;
