@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>골라방</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=8003df20e3d46249ad14814e7a98331a&libraries=services"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #F8F9FA;
+    color: #191F28;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 720px; margin: 0 auto; padding: 16px; }
+
+  /* Header */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 0 20px; flex-wrap: wrap; gap: 12px;
+  }
+  h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  h1 small { font-size: 13px; font-weight: 500; color: #6B7684; margin-left: 8px; }
+  .header-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* Buttons */
+  .btn {
+    background: white; border: 1px solid #E5E8EB; border-radius: 8px;
+    padding: 8px 14px; font-size: 14px; font-weight: 500; color: #191F28;
+    cursor: pointer; transition: all 0.15s; font-family: inherit;
+  }
+  .btn:hover { background: #F8F9FA; border-color: #D1D6DB; }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: #3182F6; color: white; border-color: #3182F6; }
+  .btn-primary:hover { background: #1B64DA; border-color: #1B64DA; }
+  .btn-sm { padding: 6px 10px; font-size: 13px; }
+  .btn-icon { padding: 8px; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; }
+  .btn-danger { color: #E5484D; }
+  .btn-danger:hover { background: #FFF1F2; border-color: #FCA5A5; }
+
+  /* Card */
+  .card {
+    background: white; border: 1px solid #E5E8EB; border-radius: 14px;
+    padding: 16px; margin-bottom: 12px;
+  }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .card-title { font-size: 15px; font-weight: 600; }
+
+  /* Empty state */
+  .empty {
+    text-align: center; padding: 48px 24px; background: white;
+    border: 1px dashed #D1D6DB; border-radius: 14px; color: #6B7684;
+  }
+  .empty p { font-size: 14px; margin-bottom: 16px; }
+
+  /* Property card */
+  .prop-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  @media (min-width: 600px) { .prop-grid { grid-template-columns: 1fr 1fr; } }
+
+  .prop-card {
+    background: white; border: 1px solid #E5E8EB; border-radius: 14px;
+    padding: 16px; cursor: pointer; transition: all 0.15s; position: relative;
+  }
+  .prop-card:hover { border-color: #D1D6DB; transform: translateY(-1px); }
+  .prop-card.lead { border: 2px solid #3182F6; padding: 15px; }
+  .prop-card .rank-badge {
+    position: absolute; top: 12px; right: 12px;
+    font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 99px;
+    background: #F2F4F6; color: #6B7684;
+  }
+  .prop-card.lead .rank-badge { background: #3182F6; color: white; }
+  .prop-name { font-size: 15px; font-weight: 600; margin-right: 50px; word-break: break-all; }
+  .prop-meta { font-size: 12px; color: #6B7684; margin-top: 4px; }
+  .prop-score-row {
+    margin-top: 12px; padding-top: 12px; border-top: 1px solid #F2F4F6;
+    display: flex; align-items: baseline; justify-content: space-between;
+  }
+  .prop-score { font-size: 28px; font-weight: 700; color: #191F28; letter-spacing: -0.5px; }
+  .prop-card.lead .prop-score { color: #3182F6; }
+  .prop-score-label { font-size: 12px; color: #6B7684; }
+  .prop-bar {
+    margin-top: 8px; height: 6px; background: #F2F4F6; border-radius: 99px; overflow: hidden;
+  }
+  .prop-bar-fill { height: 100%; background: #B0B8C1; border-radius: 99px; transition: width 0.3s; }
+  .prop-card.lead .prop-bar-fill { background: #3182F6; }
+
+  /* Mini map */
+  .mini-map {
+    width: 100%; height: 140px; margin-top: 10px;
+    border-radius: 10px; overflow: hidden; border: 1px solid #E5E8EB;
+  }
+
+  /* Slider row */
+  .slider-row {
+    display: grid; grid-template-columns: 110px 1fr 28px;
+    align-items: center; gap: 10px; padding: 6px 0;
+  }
+  .slider-row label { font-size: 13px; color: #4E5968; }
+  .slider-row .val { font-size: 13px; font-weight: 600; text-align: right; color: #191F28; }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 4px;
+    background: #E5E8EB; border-radius: 99px; outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 18px; height: 18px;
+    background: #3182F6; border-radius: 50%; cursor: pointer;
+    border: 2px solid white; box-shadow: 0 0 0 1px #E5E8EB;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 18px; height: 18px; background: #3182F6; border-radius: 50%;
+    cursor: pointer; border: 2px solid white; box-shadow: 0 0 0 1px #E5E8EB;
+  }
+
+  /* Score row (with guide) */
+  .score-block {
+    border-bottom: 1px solid #F2F4F6; padding: 10px 0;
+  }
+  .score-block:last-child { border-bottom: none; }
+  .score-head {
+    display: grid; grid-template-columns: 110px 18px 1fr 28px;
+    align-items: center; gap: 8px;
+  }
+  .score-head label { font-size: 13px; color: #4E5968; font-weight: 500; }
+  .score-head .info-btn {
+    width: 18px; height: 18px; border-radius: 50%; background: #F2F4F6;
+    border: none; cursor: pointer; font-size: 11px; color: #6B7684;
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 0; line-height: 1; font-weight: 600;
+  }
+  .score-head .info-btn:hover { background: #E5E8EB; color: #4E5968; }
+  .score-head .info-btn.active { background: #3182F6; color: white; }
+  .score-head .val { text-align: right; font-size: 13px; font-weight: 600; }
+  .score-current-desc {
+    margin: 4px 0 0 12px; font-size: 11px; color: #6B7684;
+    line-height: 1.4;
+  }
+  .score-guide {
+    margin: 8px 0 0 12px; padding: 10px 12px;
+    background: #F8F9FA; border-radius: 8px; border-left: 2px solid #3182F6;
+    display: none;
+  }
+  .score-guide.open { display: block; }
+  .score-guide-row {
+    display: grid; grid-template-columns: 32px 1fr;
+    gap: 8px; padding: 3px 0; font-size: 12px;
+  }
+  .score-guide-row .pt {
+    font-weight: 700; color: #3182F6; text-align: right;
+  }
+  .score-guide-row .desc { color: #4E5968; line-height: 1.4; }
+
+  /* Form */
+  .form-row { margin-bottom: 12px; }
+  .form-row label { display: block; font-size: 12px; color: #6B7684; margin-bottom: 4px; font-weight: 500; }
+  .form-row input, .form-row textarea, .form-row select {
+    width: 100%; padding: 10px 12px; border: 1px solid #E5E8EB; border-radius: 8px;
+    font-size: 14px; font-family: inherit; color: #191F28; background: white;
+    transition: border-color 0.15s;
+  }
+  .form-row input:focus, .form-row textarea:focus, .form-row select:focus {
+    outline: none; border-color: #3182F6;
+  }
+  .form-row textarea { resize: vertical; min-height: 60px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5);
+    display: none; align-items: flex-start; justify-content: center;
+    z-index: 100; padding: 20px; overflow-y: auto;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: white; border-radius: 16px; padding: 20px;
+    width: 100%; max-width: 520px; margin-top: 40px; margin-bottom: 40px;
+  }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+  }
+  .modal-title { font-size: 17px; font-weight: 700; }
+  .modal-close {
+    background: none; border: none; font-size: 22px; cursor: pointer;
+    color: #6B7684; padding: 4px 8px; line-height: 1;
+  }
+  .modal-actions { display: flex; gap: 8px; margin-top: 20px; justify-content: flex-end; }
+
+  /* Section */
+  .section-title {
+    font-size: 12px; font-weight: 600; color: #6B7684;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin: 24px 0 8px; padding: 0 4px;
+  }
+
+  /* Collapsible */
+  .collapsible-toggle {
+    width: 100%; background: white; border: 1px solid #E5E8EB; border-radius: 14px;
+    padding: 14px 16px; display: flex; justify-content: space-between; align-items: center;
+    cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 500; color: #191F28;
+    margin-bottom: 12px; transition: all 0.15s;
+  }
+  .collapsible-toggle:hover { background: #F8F9FA; }
+  .collapsible-toggle .arrow { font-size: 12px; color: #6B7684; transition: transform 0.2s; }
+  .collapsible-toggle.open .arrow { transform: rotate(180deg); }
+  .collapsible-body { display: none; }
+  .collapsible-body.open { display: block; }
+
+  /* Presets */
+  .preset-grid { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+
+  /* Score detail */
+  .score-detail-row {
+    display: grid; grid-template-columns: 90px 1fr 24px;
+    align-items: center; gap: 8px; padding: 4px 0;
+    font-size: 13px;
+  }
+  .score-detail-row label { color: #4E5968; font-size: 12px; }
+  .score-detail-row .val { text-align: right; font-weight: 600; font-size: 12px; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
+    background: #191F28; color: white; padding: 12px 20px; border-radius: 99px;
+    font-size: 13px; opacity: 0; transition: all 0.3s; z-index: 200;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Note */
+  .note {
+    background: #FFF8E1; border: 1px solid #FFE8A3; border-radius: 8px;
+    padding: 10px 12px; font-size: 12px; color: #5C4400; margin-bottom: 12px;
+  }
+
+  /* Tabs in modal */
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid #E5E8EB; margin-bottom: 16px; }
+  .tab {
+    padding: 10px 14px; font-size: 13px; font-weight: 500; color: #6B7684;
+    background: none; border: none; cursor: pointer; font-family: inherit;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .tab.active { color: #3182F6; border-bottom-color: #3182F6; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>골라방 <small>고르다, 방</small></h1>
+  <div class="header-actions">
+    <button class="btn btn-sm" onclick="openSettings()">설정</button>
+    <button class="btn btn-sm" onclick="exportData()">내보내기</button>
+    <button class="btn btn-sm" onclick="importData()">가져오기</button>
+    <button class="btn btn-sm btn-primary" onclick="openProp()">+ 매물</button>
+  </div>
+</header>
+
+<!-- 가중치 (접이식) -->
+<button class="collapsible-toggle" id="weightsToggle" onclick="toggleWeights()">
+  <span>가중치 조정 <span style="color:#6B7684;font-weight:400;font-size:12px;margin-left:6px;" id="weightsSummary"></span></span>
+  <span class="arrow">▼</span>
+</button>
+<div class="collapsible-body" id="weightsBody">
+  <div class="card">
+    <div class="preset-grid">
+      <button class="btn btn-sm" onclick="applyPreset('checklist')">체크리스트</button>
+      <button class="btn btn-sm" onclick="applyPreset('real')">실제 우선순위</button>
+      <button class="btn btn-sm" onclick="applyPreset('budget')">보증금 우선</button>
+      <button class="btn btn-sm" onclick="applyPreset('comfort')">매일 만족 우선</button>
+      <button class="btn btn-sm" onclick="applyPreset('reset')">전부 5</button>
+      <button class="btn btn-sm" onclick="toggleWeightGuide()" id="wGuideBtn" style="margin-left:auto;">기준 보기</button>
+    </div>
+    <div class="score-guide" id="weightGuide" style="margin-left: 0; margin-bottom: 12px;">
+      <div style="font-size:12px;font-weight:600;color:#191F28;margin-bottom:6px;">가중치 1~10점 의미</div>
+      <div id="weightGuideRows"></div>
+    </div>
+    <div id="weightSliders"></div>
+  </div>
+</div>
+
+<!-- 매물 목록 -->
+<div class="section-title">매물 목록 <span id="propCount" style="text-transform:none;letter-spacing:0;font-weight:400;color:#B0B8C1;"></span></div>
+<div id="propList"></div>
+
+</div>
+
+<!-- 매물 추가/편집 모달 -->
+<div class="modal-overlay" id="propModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="propModalTitle">매물 추가</span>
+      <button class="modal-close" onclick="closeProp()">×</button>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('basic', this)">기본 정보</button>
+      <button class="tab" onclick="switchTab('scores', this)">항목 점수</button>
+      <button class="tab" onclick="switchTab('memo', this)">메모</button>
+    </div>
+
+    <div class="tab-panel active" id="tab-basic">
+      <div class="form-row">
+        <label>이름 (구분용)</label>
+        <input type="text" id="p-name" placeholder="예: 원성14길 굿파트너">
+      </div>
+      <div class="form-row">
+        <label>주소 <span style="color:#B0B8C1;">선택, 입력시 지도+거리 자동</span></label>
+        <input type="text" id="p-address" placeholder="예: 천안시 동남구 원성14길 24">
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label>보증금 (만원)</label>
+          <input type="number" id="p-deposit" placeholder="1000">
+        </div>
+        <div class="form-row">
+          <label>월세 (만원)</label>
+          <input type="number" id="p-monthly" placeholder="50">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label>관리비 (만원) <span style="color:#B0B8C1;">선택</span></label>
+          <input type="number" id="p-maintenance" placeholder="5" step="0.1">
+        </div>
+        <div class="form-row">
+          <label>전용면적 (㎡)</label>
+          <input type="number" id="p-area" placeholder="35" step="0.1">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label>층수</label>
+          <input type="text" id="p-floor" placeholder="2 또는 2/7">
+        </div>
+        <div class="form-row">
+          <label>통근시간(분) <span style="color:#B0B8C1;">평소 수단 기준</span></label>
+          <input type="number" id="p-walk" placeholder="10">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>사용승인 연도</label>
+        <input type="number" id="p-year" placeholder="2017">
+      </div>
+      <div class="form-row">
+        <label>매물 URL <span style="color:#B0B8C1;">선택</span></label>
+        <input type="url" id="p-url" placeholder="https://...">
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-scores">
+      <div class="note">
+        각 항목 1~10점. 항목 옆 <strong>?</strong> 버튼 누르면 기준표 펼쳐짐.<br>
+        모르면 5점(중립) 두면 결과 영향 없음. <strong>방음은 가서 벽 두드려봐야 정확</strong>함.
+      </div>
+      <div id="propScoreSliders"></div>
+    </div>
+
+    <div class="tab-panel" id="tab-memo">
+      <div class="form-row">
+        <label>메모 <span style="color:#B0B8C1;">한줄평, 빡친 점, 좋은 점 등</span></label>
+        <textarea id="p-memo" placeholder="예: 채광 진짜 좋음. 부엌 좁아서 1구 싱크 빡침"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="propDeleteBtn" onclick="deleteProp()" style="display:none;margin-right:auto;">삭제</button>
+      <button class="btn" onclick="closeProp()">취소</button>
+      <button class="btn btn-primary" onclick="saveProp()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 설정 모달 -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">설정</span>
+      <button class="modal-close" onclick="closeSettings()">×</button>
+    </div>
+    <div class="form-row">
+      <label>사무실 주소 <span style="color:#B0B8C1;">통근거리 자동계산 기준점</span></label>
+      <input type="text" id="s-office" placeholder="예: 천안시 동남구 신부동 77-48">
+      <div id="s-office-result" style="font-size:11px;color:#6B7684;margin-top:4px;"></div>
+    </div>
+    <div class="form-row">
+      <label>예산 한도 - 보증금 (만원)</label>
+      <input type="number" id="s-deposit-max" placeholder="1000">
+    </div>
+    <div class="form-row">
+      <label>예산 한도 - 월세+관리비 합 (만원)</label>
+      <input type="number" id="s-monthly-max" placeholder="60">
+    </div>
+    <div class="form-row">
+      <label>통근시간 한도 (분) <span style="color:#B0B8C1;">비상시 도보 기준 추천</span></label>
+      <input type="number" id="s-walk-max" placeholder="25">
+    </div>
+    <div style="font-size:12px;color:#6B7684;margin-top:8px;">
+      한도 초과 매물은 카드에 ⚠ 표시.
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeSettings()">취소</button>
+      <button class="btn btn-primary" onclick="saveSettings()">저장</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="importFile" accept=".json" style="display:none;">
+<div class="toast" id="toast"></div>
+
+<script>
+// ===================== Config =====================
+const ITEMS = [
+  { key: 'light',    label: '채광',          w: 10 },
+  { key: 'kitchen',  label: '부엌·싱크',     w: 8 },
+  { key: 'bathroom', label: '화장실',        w: 5 },
+  { key: 'size',     label: '방 크기',       w: 7 },
+  { key: 'soundproof', label: '방음',        w: 8 },
+  { key: 'deposit',  label: '보증금 부담',   w: 7 },
+  { key: 'commute',  label: '통근 거리',     w: 9 },
+  { key: 'infra',    label: '인프라',        w: 6 },
+  { key: 'floor',    label: '저층(엘베무관)', w: 6 },
+  { key: 'clean',    label: '깨끗·신축감',   w: 5 },
+  { key: 'window',   label: '큰창·뷰',       w: 7 },
+];
+
+// 가중치 1~10점 기준
+const WEIGHT_GUIDE = [
+  { score: 10, desc: '절대 양보 못 함 — 안 맞으면 후보에서 뺌' },
+  { score: 8,  desc: '매우 중요 — 우선순위 1군' },
+  { score: 6,  desc: '중요 — 좀 부족해도 다른 거 좋으면 OK' },
+  { score: 4,  desc: '보통 — 있으면 좋고 없어도 그만' },
+  { score: 2,  desc: '별로 신경 안 씀 — 약간만 영향' },
+  { score: 0,  desc: '무관 — 결과에 영향 없음' },
+];
+
+// 점수 기준표 (1~10점). 직감으로 매기되 anchor로 일관성 유지
+const SCORE_GUIDE = {
+  light: {
+    title: '채광',
+    levels: [
+      { score: 10, desc: '큰 창 + 앞 막힘 없음 + 남/남동향, 종일 햇살' },
+      { score: 7,  desc: '적당한 창 + 약간 막힘, 남쪽 계열' },
+      { score: 5,  desc: '보통 (창 있고 어둡진 않음)' },
+      { score: 3,  desc: '작은 창 또는 옆 건물에 막힘' },
+      { score: 1,  desc: '거의 안 들어옴, 종일 어두움' },
+    ]
+  },
+  kitchen: {
+    title: '부엌·싱크',
+    levels: [
+      { score: 10, desc: '일자형 + 싱크볼 1.5구↑ + 도마 놓을 조리대' },
+      { score: 7,  desc: '일자형 + 1구지만 조리대 있음' },
+      { score: 5,  desc: '미니키친, 좁지만 기본 가능' },
+      { score: 3,  desc: '1구 싱크 + 조리대 거의 없음' },
+      { score: 1,  desc: '인덕션 1구 + 작은 싱크만, 설거지도 빡침' },
+    ]
+  },
+  bathroom: {
+    title: '화장실',
+    levels: [
+      { score: 10, desc: '넓음 + 건/습 분리 + 욕조 또는 샤워부스' },
+      { score: 7,  desc: '보통 크기 + 깔끔' },
+      { score: 5,  desc: '적당 크기 + 평범' },
+      { score: 3,  desc: '좁고 노후 흔적 있음' },
+      { score: 1,  desc: '매우 좁음, 변기·세면대 거리 가까움' },
+    ]
+  },
+  size: {
+    title: '방 크기 (체감)',
+    levels: [
+      { score: 10, desc: '넓음 (침대+책상+여유 공간)' },
+      { score: 7,  desc: '적당 (침대+책상 무난히 OK)' },
+      { score: 5,  desc: '침대+작업공간 빡빡' },
+      { score: 3,  desc: '침대 놓으면 끝' },
+      { score: 1,  desc: '이불 깔고 자야 함' },
+    ]
+  },
+  soundproof: {
+    title: '방음 (가서 직접 확인)',
+    levels: [
+      { score: 10, desc: '벽 두드려도 묵직함, 옆방 소리 안 들림 (콘크리트 벽)' },
+      { score: 7,  desc: '대체로 조용, 큰 소리만 살짝 들림' },
+      { score: 5,  desc: '보통 (안 가본 매물은 일단 5점, 가서 본 후 갱신)' },
+      { score: 3,  desc: '벽 두드리면 통통 + 옆방 대화 들림 (가벽 의심)' },
+      { score: 1,  desc: '한 층 빽빽 + 가벽 + 윗집 발소리까지 다 들림' },
+    ]
+  },
+  deposit: {
+    title: '보증금 부담',
+    levels: [
+      { score: 10, desc: '한도의 30% 이하 (예: 한도 1000 → 0~300)' },
+      { score: 7,  desc: '한도의 50~70% (예: 500~700)' },
+      { score: 5,  desc: '한도 근처 (예: 700~1000)' },
+      { score: 3,  desc: '한도 살짝 초과' },
+      { score: 1,  desc: '한도 크게 초과' },
+    ]
+  },
+  commute: {
+    title: '통근 거리 (평소+비상 종합)',
+    levels: [
+      { score: 10, desc: '평소 5분 이내 (도보든 오토바이든)' },
+      { score: 7,  desc: '평소 10분 이내 + 비상시 도보 20분 이내' },
+      { score: 5,  desc: '평소 15분 + 비상시 도보 25분' },
+      { score: 3,  desc: '평소 20분 이상 또는 비상시 도보 30분↑' },
+      { score: 1,  desc: '대중교통 환승 필요 또는 평소도 30분↑' },
+    ]
+  },
+  infra: {
+    title: '인프라 (편의시설 도보거리)',
+    levels: [
+      { score: 10, desc: '편의점·마트·카페·식당·약국 다 도보 5분 이내' },
+      { score: 7,  desc: '편의점 가깝고 마트·식당 10분 이내' },
+      { score: 5,  desc: '편의점 정도 가까움, 나머지는 좀 가야 함' },
+      { score: 3,  desc: '편의점도 10분↑, 마트는 차 타야 함' },
+      { score: 1,  desc: '주변에 거의 아무것도 없음, 차 없으면 곤란' },
+    ]
+  },
+  floor: {
+    title: '저층 (엘베 무관 동선)',
+    levels: [
+      { score: 10, desc: '1~2층 (엘베 안 타도 됨)' },
+      { score: 7,  desc: '3층 + 엘베 있음' },
+      { score: 5,  desc: '4~5층 + 엘베 있음' },
+      { score: 3,  desc: '6층 이상 + 엘베 있음' },
+      { score: 1,  desc: '엘베 없는 3층 이상' },
+    ]
+  },
+  clean: {
+    title: '깨끗·신축감',
+    levels: [
+      { score: 10, desc: '신축 5년 이내, 컨디션 최상' },
+      { score: 7,  desc: '10년 이내, 깨끗하게 관리됨' },
+      { score: 5,  desc: '10~15년, 보통 컨디션' },
+      { score: 3,  desc: '15~20년, 노후 흔적' },
+      { score: 1,  desc: '20년 초과, 낡음' },
+    ]
+  },
+  window: {
+    title: '큰창·뷰',
+    levels: [
+      { score: 10, desc: '큰 창 + 막힘 없는 뷰 (천변·공원·아파트 너머)' },
+      { score: 7,  desc: '큰 창 + 약간 막힘' },
+      { score: 5,  desc: '보통 창 + 보통 뷰' },
+      { score: 3,  desc: '작은 창 또는 답답한 뷰' },
+      { score: 1,  desc: '작은 창 + 옆건물 벽뷰' },
+    ]
+  },
+};
+
+const PRESETS = {
+  // 형이 엑셀에 적은 우선순위 그대로 (방음·인프라는 적혀있지 않았으나 일반적 가중치)
+  checklist: { light: 5, kitchen: 3, bathroom: 5, size: 10, soundproof: 6, deposit: 10, commute: 10, infra: 6, floor: 8, clean: 5, window: 5 },
+  // 4시간 대화에서 드러난 실제 우선순위
+  real:      { light: 10, kitchen: 8, bathroom: 5, size: 7, soundproof: 8, deposit: 7, commute: 9, infra: 6, floor: 6, clean: 5, window: 7 },
+  budget:    { light: 5, kitchen: 5, bathroom: 5, size: 8, soundproof: 5, deposit: 10, commute: 7, infra: 5, floor: 4, clean: 5, window: 5 },
+  comfort:   { light: 10, kitchen: 9, bathroom: 7, size: 6, soundproof: 9, deposit: 4, commute: 6, infra: 7, floor: 7, clean: 7, window: 9 },
+  reset:     { light: 5, kitchen: 5, bathroom: 5, size: 5, soundproof: 5, deposit: 5, commute: 5, infra: 5, floor: 5, clean: 5, window: 5 },
+};
+
+// ===================== State =====================
+let weights = {};
+let properties = []; // {id, name, deposit, monthly, area, floor, year, walk, url, memo, scores: {key: 1-10}, address, lat, lng}
+let settings = { office: '', officeLat: null, officeLng: null, depositMax: null, monthlyMax: null, walkMax: null };
+let editingId = null;
+let kakaoReady = false;
+
+// ===================== Kakao Maps Helpers =====================
+function waitForKakao() {
+  return new Promise((resolve, reject) => {
+    if (kakaoReady) return resolve();
+    if (window.kakao && window.kakao.maps) {
+      kakao.maps.load(() => { kakaoReady = true; resolve(); });
+      return;
+    }
+    let tries = 0;
+    const t = setInterval(() => {
+      tries++;
+      if (window.kakao && window.kakao.maps) {
+        clearInterval(t);
+        kakao.maps.load(() => { kakaoReady = true; resolve(); });
+      } else if (tries > 50) {
+        clearInterval(t);
+        reject(new Error('카카오맵 SDK 로드 실패'));
+      }
+    }, 100);
+  });
+}
+
+async function geocode(address) {
+  await waitForKakao();
+  return new Promise((resolve, reject) => {
+    const geocoder = new kakao.maps.services.Geocoder();
+    geocoder.addressSearch(address, (result, status) => {
+      if (status === kakao.maps.services.Status.OK && result.length > 0) {
+        resolve({ lat: parseFloat(result[0].y), lng: parseFloat(result[0].x), full: result[0].address_name });
+      } else {
+        // 주소로 안 되면 키워드로 다시 시도
+        const places = new kakao.maps.services.Places();
+        places.keywordSearch(address, (res, st) => {
+          if (st === kakao.maps.services.Status.OK && res.length > 0) {
+            resolve({ lat: parseFloat(res[0].y), lng: parseFloat(res[0].x), full: res[0].address_name || res[0].place_name });
+          } else {
+            reject(new Error('주소를 찾을 수 없음'));
+          }
+        });
+      }
+    });
+  });
+}
+
+// 직선거리 (m)
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const phi1 = lat1 * Math.PI / 180;
+  const phi2 = lat2 * Math.PI / 180;
+  const dPhi = (lat2 - lat1) * Math.PI / 180;
+  const dLambda = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dPhi/2)**2 + Math.cos(phi1)*Math.cos(phi2)*Math.sin(dLambda/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+// 직선거리 → 도보분 추정 (실제 길은 직선의 1.3배 정도, 도보 80m/분)
+function walkMinFromDistance(meters) {
+  return Math.round(meters * 1.3 / 80);
+}
+
+// ===================== Storage =====================
+async function load() {
+  try {
+    const w = await window.storage.get('weights');
+    if (w && w.value) weights = JSON.parse(w.value);
+    else ITEMS.forEach(i => weights[i.key] = i.w);
+  } catch { ITEMS.forEach(i => weights[i.key] = i.w); }
+
+  try {
+    const p = await window.storage.get('properties');
+    if (p && p.value) properties = JSON.parse(p.value);
+  } catch {}
+
+  try {
+    const s = await window.storage.get('settings');
+    if (s && s.value) settings = { ...settings, ...JSON.parse(s.value) };
+  } catch {}
+}
+
+async function saveWeights() {
+  try { await window.storage.set('weights', JSON.stringify(weights)); } catch {}
+}
+async function saveProperties() {
+  try { await window.storage.set('properties', JSON.stringify(properties)); } catch {}
+}
+async function saveSettingsStorage() {
+  try { await window.storage.set('settings', JSON.stringify(settings)); } catch {}
+}
+
+// ===================== Render: Weights =====================
+function renderWeightSliders() {
+  const html = ITEMS.map(it => `
+    <div class="slider-row">
+      <label>${it.label}</label>
+      <input type="range" min="0" max="10" step="1" value="${weights[it.key]}"
+             oninput="updateWeight('${it.key}', this.value)">
+      <span class="val" id="wval-${it.key}">${weights[it.key]}</span>
+    </div>
+  `).join('');
+  document.getElementById('weightSliders').innerHTML = html;
+  renderWeightGuideRows();
+  updateWeightsSummary();
+}
+
+function renderWeightGuideRows() {
+  const html = WEIGHT_GUIDE.map(g => `
+    <div class="score-guide-row">
+      <span class="pt">${g.score}점</span>
+      <span class="desc">${g.desc}</span>
+    </div>
+  `).join('');
+  document.getElementById('weightGuideRows').innerHTML = html;
+}
+
+function toggleWeightGuide() {
+  const guide = document.getElementById('weightGuide');
+  const btn = document.getElementById('wGuideBtn');
+  guide.classList.toggle('open');
+  if (guide.classList.contains('open')) {
+    btn.textContent = '기준 닫기';
+  } else {
+    btn.textContent = '기준 보기';
+  }
+}
+
+function updateWeight(key, val) {
+  weights[key] = parseInt(val);
+  document.getElementById(`wval-${key}`).textContent = val;
+  saveWeights();
+  renderProps();
+  updateWeightsSummary();
+}
+
+function updateWeightsSummary() {
+  const top = ITEMS
+    .map(i => ({ label: i.label, w: weights[i.key] }))
+    .sort((a,b) => b.w - a.w)
+    .slice(0, 3)
+    .map(x => x.label)
+    .join(' · ');
+  document.getElementById('weightsSummary').textContent = '상위: ' + top;
+}
+
+function applyPreset(name) {
+  const p = PRESETS[name];
+  if (!p) return;
+  ITEMS.forEach(i => weights[i.key] = p[i.key]);
+  saveWeights();
+  renderWeightSliders();
+  renderProps();
+  showToast('프리셋 적용됨');
+}
+
+function toggleWeights() {
+  document.getElementById('weightsToggle').classList.toggle('open');
+  document.getElementById('weightsBody').classList.toggle('open');
+}
+
+// ===================== Render: Properties =====================
+function calcScore(prop) {
+  let total = 0, maxTotal = 0;
+  ITEMS.forEach(i => {
+    const s = prop.scores?.[i.key] ?? 5;
+    total += s * weights[i.key];
+    maxTotal += 10 * weights[i.key];
+  });
+  return maxTotal === 0 ? 0 : Math.round((total / maxTotal) * 100);
+}
+
+function renderProps() {
+  const list = document.getElementById('propList');
+  document.getElementById('propCount').textContent = properties.length ? `(${properties.length})` : '';
+
+  if (properties.length === 0) {
+    list.innerHTML = `
+      <div class="empty">
+        <p>비교할 매물을 추가해주세요.<br>직방·다방·네이버부동산 등에서 본 매물을 입력하세요.</p>
+        <button class="btn btn-primary" onclick="openProp()">+ 첫 매물 추가</button>
+      </div>`;
+    return;
+  }
+
+  const scored = properties.map(p => ({ ...p, _score: calcScore(p) }));
+  scored.sort((a, b) => b._score - a._score);
+
+  const html = `<div class="prop-grid">${scored.map((p, idx) => {
+    const isLead = idx === 0 && scored.length > 1;
+    const rank = idx + 1;
+
+    // 월세+관리비 합산
+    const monthly = parseFloat(p.monthly) || 0;
+    const maint = parseFloat(p.maintenance) || 0;
+    const totalMonthly = monthly + maint;
+    const monthlyText = maint > 0
+      ? `${p.monthly}+${p.maintenance}=${totalMonthly}`
+      : (p.monthly || '-');
+
+    const meta = [];
+    if (p.deposit || p.monthly) meta.push(`${p.deposit||'-'}/${monthlyText}`);
+    if (p.area) meta.push(`${p.area}㎡`);
+    if (p.floor) meta.push(`${p.floor}층`);
+    if (p.walk != null && p.walk !== '') meta.push(`통근 ${p.walk}분`);
+
+    // 한도 위반 체크 (월세는 합산 기준)
+    const warns = [];
+    if (settings.depositMax && p.deposit && parseInt(p.deposit) > settings.depositMax) warns.push('보증금 초과');
+    if (settings.monthlyMax && totalMonthly > 0 && totalMonthly > settings.monthlyMax) {
+      warns.push('월세+관리비 초과');
+    }
+    if (settings.walkMax && p.walk && parseInt(p.walk) > settings.walkMax) warns.push('통근시간 초과');
+
+    const hasMap = p.lat != null && p.lng != null;
+
+    return `
+      <div class="prop-card ${isLead ? 'lead' : ''}" onclick="editProp('${p.id}')">
+        <div class="rank-badge">${rank}위</div>
+        <div class="prop-name">${escapeHtml(p.name)}</div>
+        <div class="prop-meta">${meta.join(' · ')}</div>
+        ${warns.length ? `<div style="font-size:11px;color:#E5484D;margin-top:4px;">⚠ ${warns.join(', ')}</div>` : ''}
+        ${p.memo ? `<div style="font-size:12px;color:#4E5968;margin-top:8px;line-height:1.4;">${escapeHtml(p.memo)}</div>` : ''}
+        ${hasMap ? `<div class="mini-map" id="map-${p.id}" data-lat="${p.lat}" data-lng="${p.lng}" onclick="event.stopPropagation();"></div>` : ''}
+        <div class="prop-score-row">
+          <span class="prop-score">${p._score}<span style="font-size:14px;font-weight:500;color:#6B7684;margin-left:2px;">%</span></span>
+          <span class="prop-score-label">${isLead ? '👑 1위' : ''}</span>
+        </div>
+        <div class="prop-bar"><div class="prop-bar-fill" style="width:${p._score}%"></div></div>
+      </div>`;
+  }).join('')}</div>`;
+  list.innerHTML = html;
+
+  // 지도 렌더링 (좌표 있는 카드만)
+  setTimeout(() => renderMiniMaps(scored), 0);
+}
+
+async function renderMiniMaps(scored) {
+  try {
+    await waitForKakao();
+  } catch { return; }
+  scored.forEach(p => {
+    if (p.lat == null || p.lng == null) return;
+    const el = document.getElementById(`map-${p.id}`);
+    if (!el || el.dataset.rendered) return;
+    el.dataset.rendered = '1';
+    const center = new kakao.maps.LatLng(p.lat, p.lng);
+    const map = new kakao.maps.Map(el, { center, level: 4, draggable: true });
+    new kakao.maps.Marker({ position: center, map });
+    // 사무실 좌표 있으면 마커 + 선
+    if (settings.officeLat && settings.officeLng) {
+      const officePos = new kakao.maps.LatLng(settings.officeLat, settings.officeLng);
+      new kakao.maps.Marker({
+        position: officePos, map,
+        image: new kakao.maps.MarkerImage(
+          'data:image/svg+xml;utf8,' + encodeURIComponent(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><circle cx="12" cy="12" r="8" fill="%233182F6" stroke="white" stroke-width="2"/></svg>'
+          ),
+          new kakao.maps.Size(24, 24)
+        )
+      });
+      new kakao.maps.Polyline({
+        path: [center, officePos], strokeWeight: 2,
+        strokeColor: '#3182F6', strokeOpacity: 0.6, strokeStyle: 'shortdash', map
+      });
+      // 양 마커 다 보이게 bounds 조정
+      const bounds = new kakao.maps.LatLngBounds();
+      bounds.extend(center); bounds.extend(officePos);
+      map.setBounds(bounds);
+    }
+  });
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ===================== Property Modal =====================
+function openProp() {
+  editingId = null;
+  document.getElementById('propModalTitle').textContent = '매물 추가';
+  document.getElementById('propDeleteBtn').style.display = 'none';
+  document.getElementById('p-name').value = '';
+  document.getElementById('p-address').value = '';
+  document.getElementById('p-deposit').value = '';
+  document.getElementById('p-monthly').value = '';
+  document.getElementById('p-maintenance').value = '';
+  document.getElementById('p-area').value = '';
+  document.getElementById('p-floor').value = '';
+  document.getElementById('p-year').value = '';
+  document.getElementById('p-walk').value = '';
+  document.getElementById('p-url').value = '';
+  document.getElementById('p-memo').value = '';
+  renderPropScoreSliders({});
+  switchTabByName('basic');
+  document.getElementById('propModal').classList.add('active');
+}
+
+function editProp(id) {
+  const p = properties.find(x => x.id === id);
+  if (!p) return;
+  editingId = id;
+  document.getElementById('propModalTitle').textContent = '매물 편집';
+  document.getElementById('propDeleteBtn').style.display = 'inline-block';
+  document.getElementById('p-name').value = p.name || '';
+  document.getElementById('p-address').value = p.address || '';
+  document.getElementById('p-deposit').value = p.deposit || '';
+  document.getElementById('p-monthly').value = p.monthly || '';
+  document.getElementById('p-maintenance').value = p.maintenance || '';
+  document.getElementById('p-area').value = p.area || '';
+  document.getElementById('p-floor').value = p.floor || '';
+  document.getElementById('p-year').value = p.year || '';
+  document.getElementById('p-walk').value = p.walk || '';
+  document.getElementById('p-url').value = p.url || '';
+  document.getElementById('p-memo').value = p.memo || '';
+  renderPropScoreSliders(p.scores || {});
+  switchTabByName('basic');
+  document.getElementById('propModal').classList.add('active');
+}
+
+function closeProp() {
+  document.getElementById('propModal').classList.remove('active');
+}
+
+function renderPropScoreSliders(scores) {
+  const html = ITEMS.map(it => {
+    const v = scores[it.key] ?? 5;
+    const guide = SCORE_GUIDE[it.key];
+    const guideHtml = guide ? guide.levels.map(l => `
+      <div class="score-guide-row">
+        <span class="pt">${l.score}점</span>
+        <span class="desc">${l.desc}</span>
+      </div>`).join('') : '';
+    const currentDesc = getCurrentDesc(it.key, v);
+    return `
+      <div class="score-block">
+        <div class="score-head">
+          <label>${it.label}</label>
+          <button type="button" class="info-btn" id="info-${it.key}"
+                  onclick="toggleGuide('${it.key}')" title="기준 보기">?</button>
+          <input type="range" min="1" max="10" step="1" value="${v}"
+                 oninput="onScoreChange('${it.key}', this.value)"
+                 data-key="${it.key}" id="sin-${it.key}">
+          <span class="val" id="sval-${it.key}">${v}</span>
+        </div>
+        <div class="score-current-desc" id="sdesc-${it.key}">${currentDesc}</div>
+        <div class="score-guide" id="sguide-${it.key}">${guideHtml}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('propScoreSliders').innerHTML = html;
+}
+
+function getCurrentDesc(key, value) {
+  const guide = SCORE_GUIDE[key];
+  if (!guide) return '';
+  const v = parseInt(value);
+  // 가장 가까운 기준 점수 찾기
+  let closest = guide.levels[0];
+  let minDiff = Math.abs(closest.score - v);
+  guide.levels.forEach(l => {
+    const diff = Math.abs(l.score - v);
+    if (diff < minDiff) { minDiff = diff; closest = l; }
+  });
+  return `${v}점 ≈ ${closest.desc}`;
+}
+
+function onScoreChange(key, val) {
+  document.getElementById(`sval-${key}`).textContent = val;
+  document.getElementById(`sdesc-${key}`).textContent = getCurrentDesc(key, val);
+}
+
+function toggleGuide(key) {
+  const guide = document.getElementById(`sguide-${key}`);
+  const btn = document.getElementById(`info-${key}`);
+  guide.classList.toggle('open');
+  btn.classList.toggle('active');
+}
+
+async function saveProp() {
+  const name = document.getElementById('p-name').value.trim();
+  if (!name) { showToast('이름은 필수'); switchTabByName('basic'); return; }
+
+  const scores = {};
+  ITEMS.forEach(i => {
+    const el = document.getElementById(`sin-${i.key}`);
+    scores[i.key] = el ? parseInt(el.value) : 5;
+  });
+
+  const address = document.getElementById('p-address').value.trim();
+  let lat = null, lng = null;
+  let walkInput = document.getElementById('p-walk').value;
+
+  // 기존 매물이고 주소 변경 없으면 좌표 유지
+  const existing = editingId ? properties.find(x => x.id === editingId) : null;
+  if (existing && existing.address === address && existing.lat != null) {
+    lat = existing.lat; lng = existing.lng;
+  } else if (address) {
+    // 주소 입력됐으면 좌표 변환 시도
+    try {
+      const r = await geocode(address);
+      lat = r.lat; lng = r.lng;
+      // 사무실 좌표 있으면 통근시간 미입력시 자동 계산
+      if (settings.officeLat && settings.officeLng && (!walkInput || walkInput === '')) {
+        const dist = haversine(settings.officeLat, settings.officeLng, lat, lng);
+        walkInput = walkMinFromDistance(dist);
+        document.getElementById('p-walk').value = walkInput;
+      }
+    } catch (e) {
+      showToast('주소를 못 찾음. 좌표 없이 저장됨');
+    }
+  }
+
+  const data = {
+    id: editingId || ('p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)),
+    name,
+    address,
+    lat, lng,
+    deposit: document.getElementById('p-deposit').value,
+    monthly: document.getElementById('p-monthly').value,
+    maintenance: document.getElementById('p-maintenance').value,
+    area: document.getElementById('p-area').value,
+    floor: document.getElementById('p-floor').value,
+    year: document.getElementById('p-year').value,
+    walk: walkInput,
+    url: document.getElementById('p-url').value.trim(),
+    memo: document.getElementById('p-memo').value.trim(),
+    scores,
+    updatedAt: Date.now(),
+  };
+
+  if (editingId) {
+    const idx = properties.findIndex(x => x.id === editingId);
+    if (idx >= 0) properties[idx] = data;
+  } else {
+    properties.push(data);
+  }
+  await saveProperties();
+  closeProp();
+  renderProps();
+  showToast(editingId ? '수정됨' : '추가됨');
+}
+
+async function deleteProp() {
+  if (!editingId) return;
+  if (!confirm('이 매물을 삭제하시겠어요?')) return;
+  properties = properties.filter(x => x.id !== editingId);
+  await saveProperties();
+  closeProp();
+  renderProps();
+  showToast('삭제됨');
+}
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+function switchTabByName(name) {
+  const btn = Array.from(document.querySelectorAll('.tab'))
+    .find(t => t.getAttribute('onclick')?.includes(`'${name}'`));
+  if (btn) switchTab(name, btn);
+}
+
+// ===================== Settings =====================
+function openSettings() {
+  document.getElementById('s-office').value = settings.office || '';
+  document.getElementById('s-deposit-max').value = settings.depositMax ?? '';
+  document.getElementById('s-monthly-max').value = settings.monthlyMax ?? '';
+  document.getElementById('s-walk-max').value = settings.walkMax ?? '';
+  const resultEl = document.getElementById('s-office-result');
+  if (settings.officeLat && settings.officeLng) {
+    resultEl.textContent = `✓ 좌표 등록됨`;
+  } else {
+    resultEl.textContent = '';
+  }
+  document.getElementById('settingsModal').classList.add('active');
+}
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('active');
+}
+async function saveSettings() {
+  const newOffice = document.getElementById('s-office').value.trim();
+  const officeChanged = newOffice !== settings.office;
+  settings.office = newOffice;
+  settings.depositMax = parseInt(document.getElementById('s-deposit-max').value) || null;
+  settings.monthlyMax = parseInt(document.getElementById('s-monthly-max').value) || null;
+  settings.walkMax = parseInt(document.getElementById('s-walk-max').value) || null;
+
+  // 사무실 주소 변경됐으면 좌표 다시 검색
+  if (officeChanged && newOffice) {
+    try {
+      const r = await geocode(newOffice);
+      settings.officeLat = r.lat;
+      settings.officeLng = r.lng;
+      document.getElementById('s-office-result').textContent = `✓ 좌표 확인됨: ${r.full}`;
+    } catch (e) {
+      settings.officeLat = null;
+      settings.officeLng = null;
+      document.getElementById('s-office-result').textContent = '⚠ 주소를 못 찾음';
+      showToast('사무실 주소를 못 찾음. 자동 거리계산 비활성화');
+    }
+  } else if (!newOffice) {
+    settings.officeLat = null;
+    settings.officeLng = null;
+  }
+
+  await saveSettingsStorage();
+  closeSettings();
+  renderProps();
+  showToast('저장됨');
+}
+
+// ===================== Import/Export =====================
+function exportData() {
+  const data = { weights, properties, settings, exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `room-compare-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('내보내기 완료');
+}
+
+function importData() {
+  document.getElementById('importFile').click();
+}
+
+document.getElementById('importFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if (!confirm('현재 데이터를 덮어씁니다. 계속할까요?')) return;
+    if (data.weights) weights = data.weights;
+    if (Array.isArray(data.properties)) properties = data.properties;
+    if (data.settings) settings = { ...settings, ...data.settings };
+    await saveWeights(); await saveProperties(); await saveSettingsStorage();
+    renderWeightSliders();
+    renderProps();
+    showToast('가져오기 완료');
+  } catch (err) {
+    showToast('파일 오류: ' + err.message);
+  }
+  e.target.value = '';
+});
+
+// ===================== Toast =====================
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ===================== Init =====================
+(async () => {
+  await load();
+  renderWeightSliders();
+  renderProps();
+})();
+</script>
+</body>
+</html>
