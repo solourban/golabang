@@ -260,7 +260,6 @@
   </div>
 </header>
 
-<!-- 가중치 (접이식) -->
 <button class="collapsible-toggle" id="weightsToggle" onclick="toggleWeights()">
   <span>가중치 조정 <span style="color:#6B7684;font-weight:400;font-size:12px;margin-left:6px;" id="weightsSummary"></span></span>
   <span class="arrow">▼</span>
@@ -283,13 +282,11 @@
   </div>
 </div>
 
-<!-- 매물 목록 -->
 <div class="section-title">매물 목록 <span id="propCount" style="text-transform:none;letter-spacing:0;font-weight:400;color:#B0B8C1;"></span></div>
 <div id="propList"></div>
 
 </div>
 
-<!-- 매물 추가/편집 모달 -->
 <div class="modal-overlay" id="propModal">
   <div class="modal">
     <div class="modal-header">
@@ -374,7 +371,6 @@
   </div>
 </div>
 
-<!-- 설정 모달 -->
 <div class="modal-overlay" id="settingsModal">
   <div class="modal">
     <div class="modal-header">
@@ -414,7 +410,7 @@
 <script>
 // ===================== Config =====================
 const ITEMS = [
-  { key: 'light',    label: '채광',          w: 10 },
+  { key: 'light',    label: '채광',         w: 10 },
   { key: 'kitchen',  label: '부엌·싱크',     w: 8 },
   { key: 'bathroom', label: '화장실',        w: 5 },
   { key: 'size',     label: '방 크기',       w: 7 },
@@ -427,7 +423,6 @@ const ITEMS = [
   { key: 'window',   label: '큰창·뷰',       w: 7 },
 ];
 
-// 가중치 1~10점 기준
 const WEIGHT_GUIDE = [
   { score: 10, desc: '절대 양보 못 함 — 안 맞으면 후보에서 뺌' },
   { score: 8,  desc: '매우 중요 — 우선순위 1군' },
@@ -437,124 +432,22 @@ const WEIGHT_GUIDE = [
   { score: 0,  desc: '무관 — 결과에 영향 없음' },
 ];
 
-// 점수 기준표 (1~10점). 직감으로 매기되 anchor로 일관성 유지
 const SCORE_GUIDE = {
-  light: {
-    title: '채광',
-    levels: [
-      { score: 10, desc: '큰 창 + 앞 막힘 없음 + 남/남동향, 종일 햇살' },
-      { score: 7,  desc: '적당한 창 + 약간 막힘, 남쪽 계열' },
-      { score: 5,  desc: '보통 (창 있고 어둡진 않음)' },
-      { score: 3,  desc: '작은 창 또는 옆 건물에 막힘' },
-      { score: 1,  desc: '거의 안 들어옴, 종일 어두움' },
-    ]
-  },
-  kitchen: {
-    title: '부엌·싱크',
-    levels: [
-      { score: 10, desc: '일자형 + 싱크볼 1.5구↑ + 도마 놓을 조리대' },
-      { score: 7,  desc: '일자형 + 1구지만 조리대 있음' },
-      { score: 5,  desc: '미니키친, 좁지만 기본 가능' },
-      { score: 3,  desc: '1구 싱크 + 조리대 거의 없음' },
-      { score: 1,  desc: '인덕션 1구 + 작은 싱크만, 설거지도 빡침' },
-    ]
-  },
-  bathroom: {
-    title: '화장실',
-    levels: [
-      { score: 10, desc: '넓음 + 건/습 분리 + 욕조 또는 샤워부스' },
-      { score: 7,  desc: '보통 크기 + 깔끔' },
-      { score: 5,  desc: '적당 크기 + 평범' },
-      { score: 3,  desc: '좁고 노후 흔적 있음' },
-      { score: 1,  desc: '매우 좁음, 변기·세면대 거리 가까움' },
-    ]
-  },
-  size: {
-    title: '방 크기 (체감)',
-    levels: [
-      { score: 10, desc: '넓음 (침대+책상+여유 공간)' },
-      { score: 7,  desc: '적당 (침대+책상 무난히 OK)' },
-      { score: 5,  desc: '침대+작업공간 빡빡' },
-      { score: 3,  desc: '침대 놓으면 끝' },
-      { score: 1,  desc: '이불 깔고 자야 함' },
-    ]
-  },
-  soundproof: {
-    title: '방음 (가서 직접 확인)',
-    levels: [
-      { score: 10, desc: '벽 두드려도 묵직함, 옆방 소리 안 들림 (콘크리트 벽)' },
-      { score: 7,  desc: '대체로 조용, 큰 소리만 살짝 들림' },
-      { score: 5,  desc: '보통 (안 가본 매물은 일단 5점, 가서 본 후 갱신)' },
-      { score: 3,  desc: '벽 두드리면 통통 + 옆방 대화 들림 (가벽 의심)' },
-      { score: 1,  desc: '한 층 빽빽 + 가벽 + 윗집 발소리까지 다 들림' },
-    ]
-  },
-  deposit: {
-    title: '보증금 부담',
-    levels: [
-      { score: 10, desc: '한도의 30% 이하 (예: 한도 1000 → 0~300)' },
-      { score: 7,  desc: '한도의 50~70% (예: 500~700)' },
-      { score: 5,  desc: '한도 근처 (예: 700~1000)' },
-      { score: 3,  desc: '한도 살짝 초과' },
-      { score: 1,  desc: '한도 크게 초과' },
-    ]
-  },
-  commute: {
-    title: '통근 거리 (평소+비상 종합)',
-    levels: [
-      { score: 10, desc: '평소 5분 이내 (도보든 오토바이든)' },
-      { score: 7,  desc: '평소 10분 이내 + 비상시 도보 20분 이내' },
-      { score: 5,  desc: '평소 15분 + 비상시 도보 25분' },
-      { score: 3,  desc: '평소 20분 이상 또는 비상시 도보 30분↑' },
-      { score: 1,  desc: '대중교통 환승 필요 또는 평소도 30분↑' },
-    ]
-  },
-  infra: {
-    title: '인프라 (편의시설 도보거리)',
-    levels: [
-      { score: 10, desc: '편의점·마트·카페·식당·약국 다 도보 5분 이내' },
-      { score: 7,  desc: '편의점 가깝고 마트·식당 10분 이내' },
-      { score: 5,  desc: '편의점 정도 가까움, 나머지는 좀 가야 함' },
-      { score: 3,  desc: '편의점도 10분↑, 마트는 차 타야 함' },
-      { score: 1,  desc: '주변에 거의 아무것도 없음, 차 없으면 곤란' },
-    ]
-  },
-  floor: {
-    title: '저층 (엘베 무관 동선)',
-    levels: [
-      { score: 10, desc: '1~2층 (엘베 안 타도 됨)' },
-      { score: 7,  desc: '3층 + 엘베 있음' },
-      { score: 5,  desc: '4~5층 + 엘베 있음' },
-      { score: 3,  desc: '6층 이상 + 엘베 있음' },
-      { score: 1,  desc: '엘베 없는 3층 이상' },
-    ]
-  },
-  clean: {
-    title: '깨끗·신축감',
-    levels: [
-      { score: 10, desc: '신축 5년 이내, 컨디션 최상' },
-      { score: 7,  desc: '10년 이내, 깨끗하게 관리됨' },
-      { score: 5,  desc: '10~15년, 보통 컨디션' },
-      { score: 3,  desc: '15~20년, 노후 흔적' },
-      { score: 1,  desc: '20년 초과, 낡음' },
-    ]
-  },
-  window: {
-    title: '큰창·뷰',
-    levels: [
-      { score: 10, desc: '큰 창 + 막힘 없는 뷰 (천변·공원·아파트 너머)' },
-      { score: 7,  desc: '큰 창 + 약간 막힘' },
-      { score: 5,  desc: '보통 창 + 보통 뷰' },
-      { score: 3,  desc: '작은 창 또는 답답한 뷰' },
-      { score: 1,  desc: '작은 창 + 옆건물 벽뷰' },
-    ]
-  },
+  light: { title: '채광', levels: [{ score: 10, desc: '큰 창 + 앞 막힘 없음 + 남/남동향, 종일 햇살' }, { score: 7, desc: '적당한 창 + 약간 막힘, 남쪽 계열' }, { score: 5, desc: '보통 (창 있고 어둡진 않음)' }, { score: 3, desc: '작은 창 또는 옆 건물에 막힘' }, { score: 1, desc: '거의 안 들어옴, 종일 어두움' }] },
+  kitchen: { title: '부엌·싱크', levels: [{ score: 10, desc: '일자형 + 싱크볼 1.5구↑ + 도마 놓을 조리대' }, { score: 7, desc: '일자형 + 1구지만 조리대 있음' }, { score: 5, desc: '미니키친, 좁지만 기본 가능' }, { score: 3, desc: '1구 싱크 + 조리대 거의 없음' }, { score: 1, desc: '인덕션 1구 + 작은 싱크만, 설거지도 빡침' }] },
+  bathroom: { title: '화장실', levels: [{ score: 10, desc: '넓음 + 건/습 분리 + 욕조 또는 샤워부스' }, { score: 7, desc: '보통 크기 + 깔끔' }, { score: 5, desc: '적당 크기 + 평범' }, { score: 3, desc: '좁고 노후 흔적 있음' }, { score: 1, desc: '매우 좁음, 변기·세면대 거리 가까움' }] },
+  size: { title: '방 크기 (체감)', levels: [{ score: 10, desc: '넓음 (침대+책상+여유 공간)' }, { score: 7, desc: '적당 (침대+책상 무난히 OK)' }, { score: 5, desc: '침대+작업공간 빡빡' }, { score: 3, desc: '침대 놓으면 끝' }, { score: 1, desc: '이불 깔고 자야 함' }] },
+  soundproof: { title: '방음 (가서 직접 확인)', levels: [{ score: 10, desc: '벽 두드려도 묵직함, 옆방 소리 안 들림 (콘크리트 벽)' }, { score: 7, desc: '대체로 조용, 큰 소리만 살짝 들림' }, { score: 5, desc: '보통 (안 가본 매물은 일단 5점, 가서 본 후 갱신)' }, { score: 3, desc: '벽 두드리면 통통 + 옆방 대화 들림 (가벽 의심)' }, { score: 1, desc: '한 층 빽빽 + 가벽 + 윗집 발소리까지 다 들림' }] },
+  deposit: { title: '보증금 부담', levels: [{ score: 10, desc: '한도의 30% 이하 (예: 한도 1000 → 0~300)' }, { score: 7, desc: '한도의 50~70% (예: 500~700)' }, { score: 5, desc: '한도 근처 (예: 700~1000)' }, { score: 3, desc: '한도 살짝 초과' }, { score: 1, desc: '한도 크게 초과' }] },
+  commute: { title: '통근 거리 (평소+비상 종합)', levels: [{ score: 10, desc: '평소 5분 이내 (도보든 오토바이든)' }, { score: 7, desc: '평소 10분 이내 + 비상시 도보 20분 이내' }, { score: 5, desc: '평소 15분 + 비상시 도보 25분' }, { score: 3, desc: '평소 20분 이상 또는 비상시 도보 30분↑' }, { score: 1, desc: '대중교통 환승 필요 또는 평소도 30분↑' }] },
+  infra: { title: '인프라 (편의시설 도보거리)', levels: [{ score: 10, desc: '편의점·마트·카페·식당·약국 다 도보 5분 이내' }, { score: 7, desc: '편의점 가깝고 마트·식당 10분 이내' }, { score: 5, desc: '편의점 정도 가까움, 나머지는 좀 가야 함' }, { score: 3, desc: '편의점도 10분↑, 마트는 차 타야 함' }, { score: 1, desc: '주변에 거의 아무것도 없음, 차 없으면 곤란' }] },
+  floor: { title: '저층 (엘베 무관 동선)', levels: [{ score: 10, desc: '1~2층 (엘베 안 타도 됨)' }, { score: 7, desc: '3층 + 엘베 있음' }, { score: 5, desc: '4~5층 + 엘베 있음' }, { score: 3, desc: '6층 이상 + 엘베 있음' }, { score: 1, desc: '엘베 없는 3층 이상' }] },
+  clean: { title: '깨끗·신축감', levels: [{ score: 10, desc: '신축 5년 이내, 컨디션 최상' }, { score: 7, desc: '10년 이내, 깨끗하게 관리됨' }, { score: 5, desc: '10~15년, 보통 컨디션' }, { score: 3, desc: '15~20년, 노후 흔적' }, { score: 1, desc: '20년 초과, 낡음' }] },
+  window: { title: '큰창·뷰', levels: [{ score: 10, desc: '큰 창 + 막힘 없는 뷰 (천변·공원·아파트 너머)' }, { score: 7, desc: '큰 창 + 약간 막힘' }, { score: 5, desc: '보통 창 + 보통 뷰' }, { score: 3, desc: '작은 창 또는 답답한 뷰' }, { score: 1, desc: '작은 창 + 옆건물 벽뷰' }] },
 };
 
 const PRESETS = {
-  // 형이 엑셀에 적은 우선순위 그대로 (방음·인프라는 적혀있지 않았으나 일반적 가중치)
   checklist: { light: 5, kitchen: 3, bathroom: 5, size: 10, soundproof: 6, deposit: 10, commute: 10, infra: 6, floor: 8, clean: 5, window: 5 },
-  // 4시간 대화에서 드러난 실제 우선순위
   real:      { light: 10, kitchen: 8, bathroom: 5, size: 7, soundproof: 8, deposit: 7, commute: 9, infra: 6, floor: 6, clean: 5, window: 7 },
   budget:    { light: 5, kitchen: 5, bathroom: 5, size: 8, soundproof: 5, deposit: 10, commute: 7, infra: 5, floor: 4, clean: 5, window: 5 },
   comfort:   { light: 10, kitchen: 9, bathroom: 7, size: 6, soundproof: 9, deposit: 4, commute: 6, infra: 7, floor: 7, clean: 7, window: 9 },
@@ -563,7 +456,7 @@ const PRESETS = {
 
 // ===================== State =====================
 let weights = {};
-let properties = []; // {id, name, deposit, monthly, area, floor, year, walk, url, memo, scores: {key: 1-10}, address, lat, lng}
+let properties = [];
 let settings = { office: '', officeLat: null, officeLng: null, depositMax: null, monthlyMax: null, walkMax: null };
 let editingId = null;
 let kakaoReady = false;
@@ -598,7 +491,6 @@ async function geocode(address) {
       if (status === kakao.maps.services.Status.OK && result.length > 0) {
         resolve({ lat: parseFloat(result[0].y), lng: parseFloat(result[0].x), full: result[0].address_name });
       } else {
-        // 주소로 안 되면 키워드로 다시 시도
         const places = new kakao.maps.services.Places();
         places.keywordSearch(address, (res, st) => {
           if (st === kakao.maps.services.Status.OK && res.length > 0) {
@@ -612,7 +504,6 @@ async function geocode(address) {
   });
 }
 
-// 직선거리 (m)
 function haversine(lat1, lng1, lat2, lng2) {
   const R = 6371000;
   const phi1 = lat1 * Math.PI / 180;
@@ -623,38 +514,38 @@ function haversine(lat1, lng1, lat2, lng2) {
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
-// 직선거리 → 도보분 추정 (실제 길은 직선의 1.3배 정도, 도보 80m/분)
 function walkMinFromDistance(meters) {
   return Math.round(meters * 1.3 / 80);
 }
 
 // ===================== Storage =====================
+// [수정 완료] 존재하지 않는 window.storage 대신 표준 localStorage 사용
 async function load() {
   try {
-    const w = await window.storage.get('weights');
-    if (w && w.value) weights = JSON.parse(w.value);
+    const w = localStorage.getItem('weights');
+    if (w) weights = JSON.parse(w);
     else ITEMS.forEach(i => weights[i.key] = i.w);
   } catch { ITEMS.forEach(i => weights[i.key] = i.w); }
 
   try {
-    const p = await window.storage.get('properties');
-    if (p && p.value) properties = JSON.parse(p.value);
+    const p = localStorage.getItem('properties');
+    if (p) properties = JSON.parse(p);
   } catch {}
 
   try {
-    const s = await window.storage.get('settings');
-    if (s && s.value) settings = { ...settings, ...JSON.parse(s.value) };
+    const s = localStorage.getItem('settings');
+    if (s) settings = { ...settings, ...JSON.parse(s) };
   } catch {}
 }
 
 async function saveWeights() {
-  try { await window.storage.set('weights', JSON.stringify(weights)); } catch {}
+  try { localStorage.setItem('weights', JSON.stringify(weights)); } catch {}
 }
 async function saveProperties() {
-  try { await window.storage.set('properties', JSON.stringify(properties)); } catch {}
+  try { localStorage.setItem('properties', JSON.stringify(properties)); } catch {}
 }
 async function saveSettingsStorage() {
-  try { await window.storage.set('settings', JSON.stringify(settings)); } catch {}
+  try { localStorage.setItem('settings', JSON.stringify(settings)); } catch {}
 }
 
 // ===================== Render: Weights =====================
@@ -757,7 +648,6 @@ function renderProps() {
     const isLead = idx === 0 && scored.length > 1;
     const rank = idx + 1;
 
-    // 월세+관리비 합산
     const monthly = parseFloat(p.monthly) || 0;
     const maint = parseFloat(p.maintenance) || 0;
     const totalMonthly = monthly + maint;
@@ -771,7 +661,6 @@ function renderProps() {
     if (p.floor) meta.push(`${p.floor}층`);
     if (p.walk != null && p.walk !== '') meta.push(`통근 ${p.walk}분`);
 
-    // 한도 위반 체크 (월세는 합산 기준)
     const warns = [];
     if (settings.depositMax && p.deposit && parseInt(p.deposit) > settings.depositMax) warns.push('보증금 초과');
     if (settings.monthlyMax && totalMonthly > 0 && totalMonthly > settings.monthlyMax) {
@@ -798,7 +687,6 @@ function renderProps() {
   }).join('')}</div>`;
   list.innerHTML = html;
 
-  // 지도 렌더링 (좌표 있는 카드만)
   setTimeout(() => renderMiniMaps(scored), 0);
 }
 
@@ -814,7 +702,7 @@ async function renderMiniMaps(scored) {
     const center = new kakao.maps.LatLng(p.lat, p.lng);
     const map = new kakao.maps.Map(el, { center, level: 4, draggable: true });
     new kakao.maps.Marker({ position: center, map });
-    // 사무실 좌표 있으면 마커 + 선
+    
     if (settings.officeLat && settings.officeLng) {
       const officePos = new kakao.maps.LatLng(settings.officeLat, settings.officeLng);
       new kakao.maps.Marker({
@@ -830,7 +718,6 @@ async function renderMiniMaps(scored) {
         path: [center, officePos], strokeWeight: 2,
         strokeColor: '#3182F6', strokeOpacity: 0.6, strokeStyle: 'shortdash', map
       });
-      // 양 마커 다 보이게 bounds 조정
       const bounds = new kakao.maps.LatLngBounds();
       bounds.extend(center); bounds.extend(officePos);
       map.setBounds(bounds);
@@ -922,7 +809,6 @@ function getCurrentDesc(key, value) {
   const guide = SCORE_GUIDE[key];
   if (!guide) return '';
   const v = parseInt(value);
-  // 가장 가까운 기준 점수 찾기
   let closest = guide.levels[0];
   let minDiff = Math.abs(closest.score - v);
   guide.levels.forEach(l => {
@@ -958,16 +844,13 @@ async function saveProp() {
   let lat = null, lng = null;
   let walkInput = document.getElementById('p-walk').value;
 
-  // 기존 매물이고 주소 변경 없으면 좌표 유지
   const existing = editingId ? properties.find(x => x.id === editingId) : null;
   if (existing && existing.address === address && existing.lat != null) {
     lat = existing.lat; lng = existing.lng;
   } else if (address) {
-    // 주소 입력됐으면 좌표 변환 시도
     try {
       const r = await geocode(address);
       lat = r.lat; lng = r.lng;
-      // 사무실 좌표 있으면 통근시간 미입력시 자동 계산
       if (settings.officeLat && settings.officeLng && (!walkInput || walkInput === '')) {
         const dist = haversine(settings.officeLat, settings.officeLng, lat, lng);
         walkInput = walkMinFromDistance(dist);
@@ -1055,7 +938,6 @@ async function saveSettings() {
   settings.monthlyMax = parseInt(document.getElementById('s-monthly-max').value) || null;
   settings.walkMax = parseInt(document.getElementById('s-walk-max').value) || null;
 
-  // 사무실 주소 변경됐으면 좌표 다시 검색
   if (officeChanged && newOffice) {
     try {
       const r = await geocode(newOffice);
